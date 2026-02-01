@@ -15,8 +15,8 @@ class GraphState(TypedDict):
     
     # 기존 필드들
     meta: Dict[str, Any]
-    fixed_events: Annotated[List[Dict[str, Any]], operator.add]
-    todo_items: Annotated[List[Dict[str, Any]], operator.add]
+    fixed_events: List[Dict[str, Any]]
+    todo_items: List[Dict[str, Any]]
     distance_matrix: Dict[str, Any]
     optimized_result: Dict[str, Any]
     selection_history: List[Dict[str, Any]]
