@@ -67,8 +67,4 @@ def distance_matrix_node(state: GraphState):
     # 결과만 반환하여 state에 저장
     return {
         "distance_matrix": distance_matrix,
-        "meta": state["meta"],          
-        "fixed_events": state["fixed_events"], 
-        "todo_items" : state["todo_items"],
-        "selection_history": state["selection_history"],
     }

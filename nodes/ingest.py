@@ -79,6 +79,4 @@ def ingest_data_node(state: GraphState):
         "meta": meta,
         "fixed_events": fixed_events,
         "todo_items": todo_items,
-        "start_point": meta["start_point"],
-        "end_point": meta["end_point"]
     }

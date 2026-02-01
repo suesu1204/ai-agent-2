@@ -96,13 +96,8 @@ def attach_final_choice_with_llm(client, todo_items):
 
 def selection_node(state: GraphState):
     print("\n--- [NODE 3] 장소 최종 선택 및 좌표 확정 시작 ---")
-    
     todo_items = state["todo_items"]
-    # 💡 고정 일정 유실 방지를 위해 미리 확보
-    fixed_events = state.get("fixed_events", [])
-    
     updated_todos = attach_final_choice_with_llm(llm_client, todo_items)
-    new_selection_history = []
     
     for todo in updated_todos:
         final_id = todo.get("final_choice")
@@ -111,35 +106,15 @@ def selection_node(state: GraphState):
         selected_cand = next((c for c in todo["candidates"] if c["id"] == final_id), None)
         
         if selected_cand:
-            # 💡 주소 데이터 정제 (리스트/문자열 모두 대응)
-            raw_addr = selected_cand.get("address", "")
-            if isinstance(raw_addr, list):
-                valid_addr = [a for a in raw_addr if a and len(a.strip()) > 0]
-                addr = valid_addr[0] if valid_addr else ""
-            else:
-                addr = raw_addr if raw_addr else ""
-
-            # 좌표 변환 로직
-            if not addr.strip():
-                print(f" '{selected_cand['name']}': 주소 없음")
-                selected_cand["coordinates"] = {"x": "0.0", "y": "0.0"}
-            else:
-                # 좌표가 없거나 초기값인 경우에만 갱신
-                if not selected_cand.get("coordinates") or str(selected_cand["coordinates"].get("x")) == "0.0":
-                    print(f" '{selected_cand['name']}' 좌표 변환 중: {addr}")
-                    selected_cand["coordinates"] = get_coordinates_kakao(addr)
-            
+            # 이미 candidate 노드에서 검증된 좌표가 넘어왔으므로 
+            # 주소 유무와 상관없이 좌표를 그대로 유지
+            print(f"   ✅ 확정: {selected_cand['name']} (좌표: {selected_cand['coordinates']['x']}, {selected_cand['coordinates']['y']})")
             todo["status"] = "confirmed"
-            new_selection_history.append({
-                "todo_id": todo["id"],
-                "selected_place": selected_cand["name"]
-            })
 
-    print(f"--- [NODE 3] 완료: {len(new_selection_history)}개 장소 확정 ---")
-    
     return {
         "todo_items": updated_todos,
-        "selection_history": new_selection_history,
-        "meta": state["meta"],
-        "fixed_events": fixed_events # 안전하게 원본 데이터 유지
+        "selection_history": [
+            {"todo_id": t["id"], "selected_place": next((c["name"] for c in t["candidates"] if c["id"] == t["final_choice"]), "N/A")} 
+            for t in updated_todos if t.get("final_choice")
+        ],
     }

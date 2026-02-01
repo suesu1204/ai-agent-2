@@ -44,29 +44,30 @@ def generate_search_words_with_llm(
     updated_items = []
 
     for todo in tqdm(todo_items, desc="Generating search words"):
-        system_prompt = """
-너는 한국 네이버 지도 검색 최적화 전문가다.
-사용자의 할 일을 분석하여 네이버 지도 검색창에 입력했을 때 가장 정확한 장소가 검색될 수 있는 짧은 키워드를 생성하라.
+        system_prompt = system_prompt = """
+너는 대한민국 지도 검색 키워드 최적화 전문가다.
+사용자의 할 일을 분석하여 네이버 지도에서 '가장 많은 장소 결과'를 얻을 수 있는 보편적인 키워드를 생성하라.
 
-[규칙]
-1. 형식: '[지역명] [핵심장소]' 형태로만 생성하라. (예: '용산구 서점', '신촌역 스타벅스')
-2. 지역명 추출: 사용자의 집/직장 주소와 todo의 '중심 위치' 정보를 조합하여 가장 구체적인 동네 이름을 사용하라.
-3. 불필요한 단어 제거: '하기 좋은', '추천', '근처' 등의 미사여구는 절대 포함하지 않는다.
-4. 오직 검색 키워드 리스트만 function call로 반환하라.
+[키워드 생성 규칙]
+1. 형식: '[지역명] [핵심장소]' (예: '서대문구 서점', '한남동 카페')
+2. 지역명 설정: 
+   - '중심 위치'가 특정 장소이면 해당 장소가 속한 '구' 또는 '동' 단위로 확장하라.
+   - 너무 좁은 지역(예: 이화여대길)보다는 '이대역' 또는 '신촌'처럼 유동인구가 많은 명칭을 사용하라.
+3. 핵심장소 설정: 
+   - 할 일의 목적에 맞는 가장 일반적인 명사형 단어를 선택하라. (예: '스터디룸', '카페', '서점')
+4. 금지어: '근처', '추천', '하기 좋은', '맛있는' 등 검색 품질을 떨어뜨리는 형용사는 절대 금지한다.
 """
-
         user_prompt = f"""
-[사용자 기본 위치 정보]
-- 집: {meta.get("user_house_address")}
-- 직장/학교: {meta.get("user_workplace_address")}
+        [사용자 기본 위치 정보]
+        - 집: {meta.get("user_house_address")}
+        - 직장/학교: {meta.get("user_workplace_address")}
 
-[할 일 정보]
-- 할 일 제목: {todo.get("task") or todo.get("title")}
-- 사용자가 지정한 중심 위치: {todo["center_place"]} (예: '집 근처', '학교 근처' 등)
+        [할 일 정보]
+        - 할 일 제목: {todo.get("task") or todo.get("title")} 
+        - 사용자가 지정한 중심 위치: {todo["center_place"]}
 
-이 정보를 바탕으로 네이버 지도에 바로 검색할 수 있는 키워드 1개를 생성하라.
-"""
-
+        위 정보를 분석하여 네이버 지도 검색 결과가 가장 잘 나올 키워드 1개를 생성하라.
+        """
         response = client.chat.completions.create(
             model=model,
             messages=[
@@ -128,6 +129,4 @@ def candidate_node(state: GraphState):
     # 업데이트된 todo_items를 반환하여 전역 state를 갱신합니다.
     return {
         "todo_items": final_updated_todos,
-        "meta": state["meta"],
-        "fixed_events": state["fixed_events"], # 기존 데이터 유지  
     }
