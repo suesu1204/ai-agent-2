@@ -1,0 +1,11 @@
+[project]
+name = "AI_Agent_Travel_Planner"
+version = "0.1.0"
+dependencies = [
+    "langgraph",
+    "langchain-openai",
+    "python-dotenv"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
