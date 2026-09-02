@@ -3,6 +3,16 @@ from state import GraphState
 from utils import llm_client
 from datetime import datetime
 
+def _recompute_total(result: dict, matrix: dict) -> None:
+    """LLM 산수를 믿지 않고 route_ids 순서로 거리 행렬을 직접 합산"""
+    ids = result.get("route_ids") or []
+    legs = [matrix.get(f"{a}->{b}") for a, b in zip(ids, ids[1:])]
+    if legs and all(legs):
+        result["total_distance"] = round(sum(l["distance_km"] for l in legs), 1)
+    else:
+        print(f"경고: route_ids 검증 실패, LLM 계산값 유지 (route_ids={ids})")
+
+
 def optimization_node(state: GraphState):
     input_json = state
 
@@ -28,6 +38,7 @@ Step 4. 전체 수치 검증: 경로상 모든 구간의 distance_km를 합산�
 [출력 JSON 스키마 고정]
 {
   "total_distance": "숫자 (전체 거리 합계, km)",
+  "route_ids": ["start", "방문 순서대로 ID (fixed_1, todo_2 등)", "...", "end"],
   "schedule": [
     "0. home_start (장소명) - 출발 [00:00]",
     "1. ID (장소명) - 활동명 ",
@@ -59,6 +70,7 @@ Step 4. 전체 수치 검증: 경로상 모든 구간의 distance_km를 합산�
     )
     
     result = json.loads(response.choices[0].message.content)
+    _recompute_total(result, state["distance_matrix"])
 
     # [수정] 파일명이 겹치지 않게 시간 정보를 추가하여 output 폴더에 저장
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -70,3 +82,14 @@ Step 4. 전체 수치 검증: 경로상 모든 구간의 distance_km를 합산�
     print(f"로그: 결과가 {file_name}에 저장되었습니다.")
 
     return {"optimized_result": result}
+
+
+if __name__ == "__main__":
+    m = {"start->a": {"distance_km": 1.2}, "a->end": {"distance_km": 0.3}}
+    r = {"total_distance": 99, "route_ids": ["start", "a", "end"]}
+    _recompute_total(r, m)
+    assert r["total_distance"] == 1.5
+    r = {"total_distance": 99, "route_ids": ["start", "zzz", "end"]}
+    _recompute_total(r, m)
+    assert r["total_distance"] == 99
+    print("ok")
