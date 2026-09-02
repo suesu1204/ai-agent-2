@@ -19,15 +19,15 @@ def optimization_node(state: GraphState):
 
 [실행 알고리즘]
 Step 1. 고정 일정 확인: 'fixed_events' 항목들의 시작/종료 시간을 타임라인의 절대적 뼈대로 세운다.
-Step 2. 지역 군집화(Clustering): 'distance_matrix' 수치가 10 이하인 지점들을 그룹화하고 중심 fixed_events 지점을 선정한다.
+Step 2. 지역 군집화(Clustering): 'distance_matrix'의 distance_km 값이 1.0 이하인 지점들을 그룹화하고 중심 fixed_events 지점을 선정한다.
 Step 3. 대안 비교 및 틈새 삽입: 
-    - todo_items 를 fixed_events 전/후에 배치했을 때의 거리 수치 변화를 시뮬레이션하여 최소값 선택.
+    - todo_items 를 fixed_events 전/후에 배치했을 때의 distance_km 변화를 시뮬레이션하여 최소값 선택.
     - 자취방(출발/도착) 근처 todo_items는 '출발 직후' 또는 '귀가 직전' 배치 우선순위 적용.
-Step 4. 전체 수치 검증: 경로상 모든 구간의 distance 수치를 합산하여 최종 total_distance를 도출한다.
+Step 4. 전체 수치 검증: 경로상 모든 구간의 distance_km를 합산하여 최종 total_distance(km)를 도출한다.
 
 [출력 JSON 스키마 고정]
 {
-  "total_distance": "숫자 (전체 거리 합계)",
+  "total_distance": "숫자 (전체 거리 합계, km)",
   "schedule": [
     "0. home_start (장소명) - 출발 [00:00]",
     "1. ID (장소명) - 활동명 ",
@@ -36,9 +36,9 @@ Step 4. 전체 수치 검증: 경로상 모든 구간의 distance 수치를 합�
   ],
   "reasoning": [
     "[Step 1. 고정 일정 확인] - 분석 내용 (예: 가용 시간 계산 등)",
-    "[Step 2. 지역 군집화] - 분석 내용 (예: 그룹화된 항목과 거리 수치)",
-    "[Step 3. 대안 비교 및 삽입] - 분석 내용 (예: A 대신 B를 선택하여 거리 5 절감 등 구체적 근거)",
-    "[Step 4. 수치 검증] - 합산식 (예: 10+5+15...=30)"
+    "[Step 2. 지역 군집화] - 분석 내용 (예: 그룹화된 항목과 km 거리)",
+    "[Step 3. 대안 비교 및 삽입] - 분석 내용 (예: A 대신 B를 선택하여 1.2km 절감 등 구체적 근거)",
+    "[Step 4. 수치 검증] - 합산식 (예: 1.0+0.5+1.5...=3.0)"
   ]
 }
 
