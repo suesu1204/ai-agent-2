@@ -18,7 +18,8 @@ def get_coordinates_kakao(address):
         if data.get("documents"):
             # 좌표가 있다면 바로 반환
             return {"x": data["documents"][0]["x"], "y": data["documents"][0]["y"]}
-    except: pass
+    except Exception as e:
+        print(f"카카오 주소 검색 실패 ({address}): {e}")
 
     # [방법 2] 주소 검색 실패 시 키워드/장소 검색으로 재시도 
     try:
@@ -27,7 +28,8 @@ def get_coordinates_kakao(address):
         data = res.json()
         if data.get("documents"):
             return {"x": data["documents"][0]["x"], "y": data["documents"][0]["y"]}
-    except: pass
+    except Exception as e:
+        print(f"카카오 키워드 검색 실패 ({address}): {e}")
 
     # 둘 다 실패하면 에러 로그라도 찍어야 합니다.
     print(f" '{address}'에 대한 좌표를 카카오에서 찾지 못했습니다.")

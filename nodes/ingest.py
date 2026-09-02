@@ -3,6 +3,14 @@ from state import GraphState
 from utils import get_coordinates_kakao
 
 
+def _require_coords(label: str, address: str):
+    """좌표 변환 실패 시 잘못된 거리 행렬로 이어지므로 즉시 중단"""
+    coords = get_coordinates_kakao(address)
+    if coords.get("x") == "0.0":
+        raise ValueError(f"{label} 좌표 변환 실패: '{address}'")
+    return coords
+
+
 # Node 1: 데이터 전처리 및 초기화 노드
 def ingest_data_node(state: GraphState):
     # 💡 1. raw_input 정의
@@ -11,8 +19,8 @@ def ingest_data_node(state: GraphState):
     print("\n--- [NODE 1] 데이터 처리를 시작합니다 ---")
 
     # (1) Meta Data 처리 및 좌표 변환
-    start_coords = get_coordinates_kakao(raw_input["start_point"]["address"])
-    end_coords = get_coordinates_kakao(raw_input["end_point"]["address"])
+    start_coords = _require_coords("출발지", raw_input["start_point"]["address"])
+    end_coords = _require_coords("도착지", raw_input["end_point"]["address"])
     print(f"DEBUG: Start Coords = {start_coords}, End Coords = {end_coords}")
 
     meta = {
@@ -40,7 +48,7 @@ def ingest_data_node(state: GraphState):
     fixed_events = []
     for idx, item in enumerate(raw_fixed, 1):
         print(f"고정 일정 좌표 변환 중: {item['location']}")
-        coords = get_coordinates_kakao(item["location"])
+        coords = _require_coords(f"고정 일정[{item['title']}]", item["location"])
         print(f"DEBUG: 고정일정[{item['title']}] 좌표 = {coords}")
         
         processed_item = {
