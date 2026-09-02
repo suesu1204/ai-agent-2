@@ -61,7 +61,7 @@ Step 4. 전체 수치 검증: 경로상 모든 구간의 distance_km를 합산�
     user_input = f"데이터: {json.dumps(optimization_input, ensure_ascii=False)}"
 
     response = llm_client.chat.completions.create(
-        model="solar-pro",
+        model="solar-pro2",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_input}
