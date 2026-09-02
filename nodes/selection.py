@@ -77,10 +77,11 @@ def select_candidate_with_llm(
         }
     )
 
-    tool_call = response.choices[0].message.tool_calls[0]
-    args = json.loads(tool_call.function.arguments)
-
-    return args
+    tool_calls = response.choices[0].message.tool_calls
+    if not tool_calls:
+        print(f"장소 선택 실패 (function call 없음): {todo['title']}")
+        return None
+    return json.loads(tool_calls[0].function.arguments)
 
 def attach_final_choice_with_llm(client, todo_items):
     for todo in todo_items:
@@ -88,6 +89,8 @@ def attach_final_choice_with_llm(client, todo_items):
             continue
 
         result = select_candidate_with_llm(client, todo)
+        if not result:
+            continue
 
         todo["final_choice"] = result["candidate_id"]
         todo["selection_reason"] = result.get("reason", "")
