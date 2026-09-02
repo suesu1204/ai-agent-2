@@ -10,7 +10,7 @@ class GraphState(TypedDict):
     user_house_address: str
     user_workplace_address: str
     
-    # [추가] 가공 전 할 일 목록
+    # 가공 전 할 일 목록
     todo_list_raw: List[Dict[str, Any]]
     
     # 기존 필드들

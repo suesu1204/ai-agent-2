@@ -13,35 +13,30 @@ def _require_coords(label: str, address: str):
 
 # Node 1: 데이터 전처리 및 초기화 노드
 def ingest_data_node(state: GraphState):
-    # 💡 1. raw_input 정의
-    raw_input = state 
-    
     print("\n--- [NODE 1] 데이터 처리를 시작합니다 ---")
 
     # (1) Meta Data 처리 및 좌표 변환
-    start_coords = _require_coords("출발지", raw_input["start_point"]["address"])
-    end_coords = _require_coords("도착지", raw_input["end_point"]["address"])
+    start_coords = _require_coords("출발지", state["start_point"]["address"])
+    end_coords = _require_coords("도착지", state["end_point"]["address"])
     print(f"DEBUG: Start Coords = {start_coords}, End Coords = {end_coords}")
 
     meta = {
-        "user_id": raw_input.get("user_id"),
-        "target_date": raw_input.get("target_date"),
-        "user_house_address": raw_input.get("user_house_address"),
-        "user_workplace_address": raw_input.get("user_workplace_address"),
+        "user_id": state.get("user_id"),
+        "target_date": state.get("target_date"),
+        "user_house_address": state.get("user_house_address"),
+        "user_workplace_address": state.get("user_workplace_address"),
         "start_point": {
-            **raw_input["start_point"],
+            **state["start_point"],
             "coordinates": start_coords
         },
         "end_point": {
-            **raw_input["end_point"],
+            **state["end_point"],
             "coordinates": end_coords
         }
     }
 
     # (2) Fixed Schedules 처리
-    # 수정: STATE에 있는 'fixed_events' 키를 직접 참조하거나 
-    # main.py에서 보낸 'fixed_schedules'가 있다면 그것도 참조하도록 보강
-    raw_fixed = raw_input.get("fixed_events") or raw_input.get("fixed_schedules") or []
+    raw_fixed = state.get("fixed_events") or []
     
     print(f"DEBUG [Ingest]: 원본 데이터에서 찾은 일정 개수 = {len(raw_fixed)}")
 
@@ -65,8 +60,7 @@ def ingest_data_node(state: GraphState):
 
     # (3) Todo Items 처리
     todo_items = []
-    # 💡 수정: todo_list_raw 키 참조
-    for idx, item in enumerate(raw_input.get("todo_list_raw", []), 1):
+    for idx, item in enumerate(state.get("todo_list_raw", []), 1):
         processed_item = {
             "id": f"todo_{idx}",
             "type": "todo",
