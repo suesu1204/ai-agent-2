@@ -21,11 +21,10 @@ async def launch_browser_async():
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     )
 
-    page = await context.new_page()
-    return pw, browser, page
+    return pw, browser, context
 
-async def crawl_naver_places_async(search_words: str, todo_id: str, max_results=3):
-    pw, browser, page = await launch_browser_async()
+async def crawl_naver_places_async(context, search_words: str, todo_id: str, max_results=3):
+    page = await context.new_page()
     candidates = []
 
     # 제거할 불필요한 키워드 목록
@@ -85,56 +84,60 @@ async def crawl_naver_places_async(search_words: str, todo_id: str, max_results=
     except Exception as e:
         print(f"크롤링 에러 발생 ({search_words}): {e}")
     finally:
-        print("브라우저 리소스를 해제합니다")
-        if browser:
-            await browser.close()
-        if pw:
-            await pw.stop()
+        await page.close()
 
     return candidates
 
 # 메인 실행 함수
 async def attach_candidates_with_crawling_async(todo_items):
-    for todo in todo_items:
-        print(f"Crawling: {todo['search_words']}...")
-        raw_candidates = await crawl_naver_places_async(todo["search_words"], todo["id"])
-        
-        valid_candidates = []
-        for cand in raw_candidates:
-            # 1. 주소 데이터 정제 (기존 로직 유지)
-            raw_addr = cand.get("address", "")
-            clean_addr = ""
-            if isinstance(raw_addr, list):
-                valid_parts = [str(a).strip() for a in raw_addr if a and str(a).strip()]
-                clean_addr = valid_parts[0] if valid_parts else ""
-            else:
-                clean_addr = str(raw_addr).strip() if raw_addr and raw_addr != "[]" else ""
-
-            # 2. 좌표 체크 및 보정
-            curr_coords = cand.get("coordinates", {})
-            if not curr_coords or str(curr_coords.get("x")) == "0.0":
-                # 주소가 유효하면 주소 사용, 아니면 이름 사용
-                base_query = clean_addr if clean_addr else cand.get("name", "")
-                
-                if base_query:
-                    # 검색어 최적화: 콤마나 공백으로 잘라 핵심 상호명만 추출
-                    # 예: '돌삼카페, 레스토랑 삼각지점' -> '돌삼카페'
-                    refined_query = base_query.split(',')[0].split(' ')[0]
-                    
-                    # 너무 짧은 경우(한 글자 등)를 대비해 안전장치 추가
-                    final_query = refined_query if len(refined_query) > 1 else base_query
-                    
-                    print(f" 좌표 재시도 ({cand.get('name')}) -> 최종 검색어: '{final_query}'")
-                    cand["coordinates"] = get_coordinates_kakao(final_query)
-
-            # 3. 최종 필터링
-            final_coords = cand.get("coordinates", {})
-            if final_coords and str(final_coords.get("x")) != "0.0":
-                valid_candidates.append(cand)
-            else:
-                print(f"   🗑️ 제외됨 (좌표 없음): {cand.get('name')}")
-        
-        todo["candidates"] = valid_candidates
-        todo["status"] = "need_selection"
-        
+    pw, browser, context = await launch_browser_async()
+    try:
+        for todo in todo_items:
+            await _attach_one(context, todo)
+    finally:
+        print("브라우저 리소스를 해제합니다")
+        await browser.close()
+        await pw.stop()
     return todo_items
+
+async def _attach_one(context, todo):
+    print(f"Crawling: {todo['search_words']}...")
+    raw_candidates = await crawl_naver_places_async(context, todo["search_words"], todo["id"])
+    
+    valid_candidates = []
+    for cand in raw_candidates:
+        # 1. 주소 데이터 정제 (기존 로직 유지)
+        raw_addr = cand.get("address", "")
+        clean_addr = ""
+        if isinstance(raw_addr, list):
+            valid_parts = [str(a).strip() for a in raw_addr if a and str(a).strip()]
+            clean_addr = valid_parts[0] if valid_parts else ""
+        else:
+            clean_addr = str(raw_addr).strip() if raw_addr and raw_addr != "[]" else ""
+
+        # 2. 좌표 체크 및 보정
+        curr_coords = cand.get("coordinates", {})
+        if not curr_coords or str(curr_coords.get("x")) == "0.0":
+            # 주소가 유효하면 주소 사용, 아니면 이름 사용
+            base_query = clean_addr if clean_addr else cand.get("name", "")
+            
+            if base_query:
+                # 검색어 최적화: 콤마나 공백으로 잘라 핵심 상호명만 추출
+                # 예: '돌삼카페, 레스토랑 삼각지점' -> '돌삼카페'
+                refined_query = base_query.split(',')[0].split(' ')[0]
+                
+                # 너무 짧은 경우(한 글자 등)를 대비해 안전장치 추가
+                final_query = refined_query if len(refined_query) > 1 else base_query
+                
+                print(f" 좌표 재시도 ({cand.get('name')}) -> 최종 검색어: '{final_query}'")
+                cand["coordinates"] = get_coordinates_kakao(final_query)
+
+        # 3. 최종 필터링
+        final_coords = cand.get("coordinates", {})
+        if final_coords and str(final_coords.get("x")) != "0.0":
+            valid_candidates.append(cand)
+        else:
+            print(f"   🗑️ 제외됨 (좌표 없음): {cand.get('name')}")
+    
+    todo["candidates"] = valid_candidates
+    todo["status"] = "need_selection"
