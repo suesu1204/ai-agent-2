@@ -78,8 +78,13 @@ def generate_search_words_with_llm(
             tool_choice={"type": "function", "function": {"name": "generate_search_words"}},
         )
 
-        tool_call = response.choices[0].message.tool_calls[0]
-        args = json.loads(tool_call.function.arguments)
+        tool_calls = response.choices[0].message.tool_calls
+        if not tool_calls:
+            print(f"검색어 생성 실패, 제목으로 대체: {todo['title']}")
+            todo["search_words"] = todo["title"]
+            updated_items.append(todo)
+            continue
+        args = json.loads(tool_calls[0].function.arguments)
 
         # todo item 업데이트
         todo["search_words"] = args["search_words"]
