@@ -59,7 +59,8 @@ def distance_matrix_node(state: GraphState):
             distance_matrix[key] = {
                 "origin_name": origin["name"],
                 "dest_name": dest["name"],
-                "distance_meter": dist
+                "distance_meter": dist,
+                "distance_km": round(dist / 1000, 1)
             }
 
     print("--- [NODE 4] 완료: 거리 행렬 생성 완료 ---")
