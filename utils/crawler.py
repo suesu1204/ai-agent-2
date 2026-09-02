@@ -1,4 +1,5 @@
 import asyncio
+import os
 from playwright.async_api import async_playwright
 from utils import get_coordinates_kakao
 
@@ -6,7 +7,7 @@ from utils import get_coordinates_kakao
 async def launch_browser_async():
     pw = await async_playwright().start()
     browser = await pw.chromium.launch(
-        headless=False,
+        headless=os.getenv("CRAWLER_HEADLESS") == "1",  # 기본은 창 표시, 디버깅 끝나면 CRAWLER_HEADLESS=1
         args=[
             "--disable-http2",              # SSL/인증서 관련 에러 방지
             "--ignore-certificate-errors",  # 인증서 에러 무시
@@ -33,7 +34,6 @@ async def crawl_naver_places_async(context, search_words: str, todo_id: str, max
     try:
         url = f"https://map.naver.com/p/search/{search_words}"
         await page.goto(url, wait_until="commit", timeout=60000)
-        await asyncio.sleep(4) # 로딩 대기
 
         await page.wait_for_selector("iframe#searchIframe", timeout=20000)
         search_iframe = await page.query_selector("iframe#searchIframe")
@@ -44,7 +44,7 @@ async def crawl_naver_places_async(context, search_words: str, todo_id: str, max
 
             #스크롤을 살짝 내려서 데이터를 활성화 (네이버 지도 특징)
             await frame.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await asyncio.sleep(5)
+            await frame.wait_for_selector("li .TYp9e, li .YwYLL, li .place_bluelink, li .C_N_u", timeout=10000)
 
             cards = await frame.query_selector_all("li")
             count = 0
