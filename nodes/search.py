@@ -44,7 +44,7 @@ def generate_search_words_with_llm(
     updated_items = []
 
     for todo in tqdm(todo_items, desc="Generating search words"):
-        system_prompt = system_prompt = """
+        system_prompt = """
 너는 대한민국 지도 검색 키워드 최적화 전문가다.
 사용자의 할 일을 분석하여 네이버 지도에서 '가장 많은 장소 결과'를 얻을 수 있는 보편적인 키워드를 생성하라.
 
@@ -122,7 +122,6 @@ def candidate_node(state: GraphState):
     print(f"> 네이버 지도 크롤링 및 장소 후보 수집 시작...")
     
     # 코랩/주피터 환경의 이벤트 루프 대응
-    import nest_asyncio
     nest_asyncio.apply()
     
     # 기존에 정의하신 attach_candidates_with_crawling_async 함수 호출
