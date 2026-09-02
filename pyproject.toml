@@ -4,8 +4,14 @@ version = "0.1.0"
 dependencies = [
     "langgraph",
     "langchain-openai",
-    "python-dotenv"
+    "python-dotenv",
+    "openai",
+    "requests",
+    "playwright",
+    "nest-asyncio",
+    "tqdm",
 ]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+py-modules = ["main", "state"]
+packages = ["nodes", "utils"]
